@@ -4,8 +4,9 @@ namespace App\Exports\Purchases\Bills\Sheets;
 
 use App\Abstracts\Export;
 use App\Models\Document\DocumentItemTax as Model;
+use App\Interfaces\Export\WithParentSheet;
 
-class BillItemTaxes extends Export
+class BillItemTaxes extends Export implements WithParentSheet
 {
     public function collection()
     {
@@ -22,6 +23,7 @@ class BillItemTaxes extends Export
 
         $model->bill_number = $document->document_number;
         $model->item_name = $model->item->name;
+        $model->tax_name = $model->tax->name;
         $model->tax_rate = $model->tax->rate;
 
         return parent::map($model);
@@ -32,6 +34,7 @@ class BillItemTaxes extends Export
         return [
             'bill_number',
             'item_name',
+            'tax_name',
             'tax_rate',
             'amount',
         ];

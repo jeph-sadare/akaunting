@@ -7,6 +7,7 @@ use App\Interfaces\Utility\DocumentNumber;
 use App\Models\Common\Media as MediaModel;
 use App\Models\Setting\Tax;
 use App\Scopes\Document as Scope;
+use App\Traits\Contacts;
 use App\Traits\Currencies;
 use App\Traits\DateTime;
 use App\Traits\Documents;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Document extends Model
 {
-    use HasFactory, Documents, Cloneable, Currencies, DateTime, Media, Recurring;
+    use HasFactory, Documents, Cloneable, Contacts, Currencies, DateTime, Media, Recurring;
 
     public const INVOICE_TYPE = 'invoice';
     public const INVOICE_RECURRING_TYPE = 'invoice-recurring';
@@ -42,6 +43,8 @@ class Document extends Model
         'amount',
         'currency_code',
         'currency_rate',
+        'discount_type',
+        'discount_rate',
         'category_id',
         'contact_id',
         'contact_name',
@@ -57,6 +60,8 @@ class Document extends Model
         'subheading',
         'notes',
         'footer',
+        'template',
+        'color',
         'parent_id',
         'created_from',
         'created_by',
@@ -313,6 +318,26 @@ class Document extends Model
      *
      * @return string
      */
+    public function getDiscountRateAttribute($value)
+    {
+        return $value ?? 0;
+    }
+
+    /**
+     * Get the discount percentage.
+     *
+     * @return string
+     */
+    public function getDiscountTypeAttribute($value)
+    {
+        return $value ?? 'percentage';
+    }
+
+    /**
+     * Get the discount percentage.
+     *
+     * @return string
+     */
     public function getDiscountAttribute()
     {
         $percent = 0;
@@ -475,25 +500,11 @@ class Document extends Model
 
     public function getContactLocationAttribute()
     {
-        $location = [];
-
-        if ($this->contact_city) {
-            $location[] = $this->contact_city;
-        }
-
-        if ($this->contact_zip_code) {
-            $location[] = $this->contact_zip_code;
-        }
-
-        if ($this->contact_state) {
-            $location[] = $this->contact_state;
-        }
-
         if ($this->contact_country && array_key_exists($this->contact_country, trans('countries'))) {
-            $location[] = trans('countries.' . $this->contact_country);
+            $country = trans('countries.' . $this->contact_country);
         }
 
-        return implode(', ', $location);
+        return $this->getFormattedAddress($this->contact_city, $country ?? null, $this->contact_state, $this->contact_zip_code);
     }
 
     /**

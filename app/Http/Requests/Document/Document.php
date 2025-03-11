@@ -47,7 +47,7 @@ class Document extends FormRequest
 
         $rules = [
             'type'                  => 'required|string',
-            'document_number'       => 'required|string|unique:documents,NULL,' . $id . ',id,type,' . $type . ',company_id,' . $company_id . ',deleted_at,NULL',
+            'document_number'       => 'required|string|unique:documents,NULL,' . ($id ?? 'null') . ',id,type,' . $type . ',company_id,' . $company_id . ',deleted_at,NULL',
             //'status'                => 'required|string|in:draft,paid,partial,sent,received,viewed,cancelled',
             'status'                => 'required|string',
             'issued_at'             => 'required|date_format:Y-m-d H:i:s|before_or_equal:due_at',
@@ -93,6 +93,8 @@ class Document extends FormRequest
             foreach ($items as $key => $item) {
                 $size = 10;
 
+                $items[$key]['quantity'] = calculation_to_quantity($item['quantity']);
+
                 if (Str::contains($item['quantity'], ['.', ','])) {
                     $size = 12;
                 }
@@ -101,6 +103,8 @@ class Document extends FormRequest
 
                 $this->items_quantity_size[$key] = $size;
             }
+
+            $this->request->set('items', $items);
         }
 
         return $rules;

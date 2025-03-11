@@ -4,10 +4,11 @@ namespace App\Exports\Purchases\RecurringBills\Sheets;
 
 use App\Abstracts\Export;
 use App\Models\Document\Document as Model;
+use App\Interfaces\Export\WithParentSheet;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class RecurringBills extends Export implements WithColumnFormatting
+class RecurringBills extends Export implements WithColumnFormatting, WithParentSheet
 {
     public function collection()
     {
@@ -39,6 +40,8 @@ class RecurringBills extends Export implements WithColumnFormatting
             'billed_at',
             'due_at',
             'amount',
+            'discount_type',
+            'discount_rate',
             'currency_code',
             'currency_rate',
             'category_name',
@@ -51,7 +54,11 @@ class RecurringBills extends Export implements WithColumnFormatting
             'contact_state',
             'contact_zip_code',
             'contact_city',
+            'title',
+            'subheading',
             'notes',
+            'template',
+            'color',
         ];
     }
 
