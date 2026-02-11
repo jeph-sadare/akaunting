@@ -45,6 +45,20 @@ class Bills extends Controller
      */
     public function show(Document $bill)
     {
+        $bill->load([
+            'items.taxes.tax',
+            'items.item',
+            'totals',
+            'contact',
+            'currency',
+            'category',
+            'histories',
+            'media',
+            'transactions',
+            'recurring',
+            'children',
+        ]);
+
         return view('purchases.bills.show', compact('bill'));
     }
 

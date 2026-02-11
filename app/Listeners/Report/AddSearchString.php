@@ -13,6 +13,7 @@ class AddSearchString extends Listener
         'App\Reports\IncomeExpenseSummary',
         'App\Reports\ProfitLoss',
         'App\Reports\TaxSummary',
+        'App\Reports\DiscountSummary',
     ];
 
     /**
@@ -27,8 +28,8 @@ class AddSearchString extends Listener
             return;
         }
 
-        $old = old();
-        $request = request()->all();
+        $old = old() ?? [];
+        $request = request()->all() ?? [];
 
         if ($old || $request) {
             $input = request('search');

@@ -19,7 +19,7 @@ class Documents extends ApiController
      */
     public function index()
     {
-        $documents = Document::with('contact', 'histories', 'items', 'transactions')->collect(['issued_at'=> 'desc']);
+        $documents = Document::with('contact', 'histories', 'items', 'item_taxes', 'totals', 'transactions')->collect(['issued_at'=> 'desc']);
 
         return Resource::collection($documents);
     }
@@ -34,9 +34,33 @@ class Documents extends ApiController
     {
         // Check if we're querying by id or number
         if (is_numeric($id)) {
-            $document = Document::find($id);
+            $document = Document::with([
+                'contact',
+                'histories',
+                'items',
+                'items.taxes',
+                'items.taxes.tax',
+                'item_taxes',
+                'totals',
+                'transactions',
+                'transactions.currency',
+                'transactions.account',
+                'transactions.category',
+            ])->find($id);
         } else {
-            $document = Document::where('document_number', $id)->first();
+            $document = Document::with([
+                'contact',
+                'histories',
+                'items',
+                'items.taxes',
+                'items.taxes.tax',
+                'item_taxes',
+                'totals',
+                'transactions',
+                'transactions.currency',
+                'transactions.account',
+                'transactions.category',
+            ])->where('document_number', $id)->first();
         }
 
         if (! $document instanceof Document) {

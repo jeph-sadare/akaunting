@@ -23,9 +23,7 @@ class UpdateDocument extends Job implements ShouldUpdate
         }
 
         // Disable this lines for global discount issue fixed ( https://github.com/akaunting/akaunting/issues/2797 )
-        if (! empty($this->request['discount'])) {
-            $this->request['discount_rate'] = $this->request['discount'];
-        }
+        $this->request['discount_rate'] = $this->request['discount'] ?? null;
 
         event(new DocumentUpdating($this->model, $this->request));
 
@@ -39,7 +37,9 @@ class UpdateDocument extends Job implements ShouldUpdate
 
                     $this->model->attachMedia($media, 'attachment');
                 }
-            } elseif (! $this->request->file('attachment') && $this->model->attachment) {
+            } elseif ($this->request->isNotApi() && ! $this->request->file('attachment') && $this->model->attachment) {
+                $this->deleteMediaModel($this->model, 'attachment', $this->request);
+            } elseif ($this->request->isApi() && $this->request->has('remove_attachment') && $this->model->attachment) {
                 $this->deleteMediaModel($this->model, 'attachment', $this->request);
             }
 

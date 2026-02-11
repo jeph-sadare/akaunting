@@ -31,7 +31,7 @@ class Invoices extends Controller
     {
         $this->setActiveTabForDocuments();
 
-        $invoices = Document::invoice()->with('contact', 'items', 'item_taxes', 'last_history', 'transactions', 'totals', 'histories', 'media')->collect(['document_number'=> 'desc']);
+        $invoices = Document::invoice()->with('contact', 'items', 'items.taxes', 'item_taxes', 'last_history', 'transactions', 'totals', 'histories', 'media')->collect(['document_number'=> 'desc']);
 
         $total_invoices = Document::invoice()->count();
 
@@ -47,6 +47,20 @@ class Invoices extends Controller
      */
     public function show(Document $invoice)
     {
+        $invoice->load([
+            'items.taxes.tax',
+            'items.item',
+            'totals',
+            'contact',
+            'currency',
+            'category',
+            'histories',
+            'media',
+            'transactions',
+            'recurring',
+            'children',
+        ]);
+
         return view('sales.invoices.show', compact('invoice'));
     }
 

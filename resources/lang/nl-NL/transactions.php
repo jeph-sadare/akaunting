@@ -12,6 +12,7 @@ return [
     'recurring_expense'     => 'Terugkerende Uitgaven',
     'included_tax'          => 'Inclusief belastingbedrag',
     'connected'             => 'Verbonden',
+    'connect_message'       => 'Belastingen voor deze :type werden niet berekend tijdens het verbindingsproces. Belastingen kunnen niet worden verbonden.',
 
     'form_description' => [
         'general'           => 'Hier kunt u de algemene informatie van de transactie invoeren, zoals datum, bedrag, rekening, beschrijving, enz.',
@@ -46,5 +47,12 @@ return [
     'sticky' => [
         'description'       => 'Je bekijkt hoe je klant de webversie van je betaling zal zien.',
     ],
+
+    'messages' => [
+        'update_document_transaction' => 'U kunt deze transactie bijwerken. U moet naar het document gaan en het daar bewerken.',
+        'create_document_transaction_error' => 'Dit eindpunt kan niet worden toegevoegd aan een document. Gebruik {{akaunting_url}}/documenten/{{akaunting_document_id}}/Transacties',
+        'update_document_transaction_error' => 'Dit eindpunt kan niet worden bijgewerkt naar een document. Gebruik {{akaunting_url}}/documenten/{{akaunting_document_id}}/transactions/{akaunting_transaction_id}',
+        'delete_document_transaction_error' => 'Dit eindpunt kan niet worden verwijderd naar een document. Gebruik {{akaunting_url}}/documenten/{{akaunting_document_id}}/transactions/{akaunting_transaction_id}',
+    ]
 
 ];

@@ -39,7 +39,7 @@ class Transactions extends Controller
     {
         $this->setActiveTabForTransactions();
 
-        $transactions = Transaction::with('account', 'category', 'contact')->collect(['paid_at'=> 'desc']);
+        $transactions = Transaction::with('account', 'category', 'contact', 'taxes')->collect(['paid_at'=> 'desc']);
 
         $total_transactions = Transaction::count();
 
@@ -239,6 +239,19 @@ class Transactions extends Controller
      */
     public function update(Transaction $transaction, Request $request)
     {
+        if ($transaction->document_id) {
+            $message = trans('transactions.messages.update_document_transaction');
+
+            flash($message)->error()->important();
+
+            return response()->json([
+                'success' => false,
+                'error' => true,
+                'message' => $message,
+                'redirect' => route('transactions.edit', $transaction->id),
+            ]);
+        }
+
         $response = $this->ajaxDispatch(new UpdateTransaction($transaction, $request));
 
         if ($response['success']) {
@@ -333,7 +346,9 @@ class Transactions extends Controller
     {
         event(new TransactionPrinting($transaction));
 
-        $view = view('banking.transactions.print_default', compact('transaction'));
+        $real_type = $this->getRealTypeTransaction($transaction->type);
+
+        $view = view('banking.transactions.print_default', compact('transaction', 'real_type'));
 
         return mb_convert_encoding($view, 'HTML-ENTITIES', 'UTF-8');
     }
@@ -351,7 +366,9 @@ class Transactions extends Controller
 
         $currency_style = true;
 
-        $view = view('banking.transactions.print_default', compact('transaction', 'currency_style'))->render();
+        $real_type = $this->getRealTypeTransaction($transaction->type);
+
+        $view = view('banking.transactions.print_default', compact('transaction', 'currency_style', 'real_type'))->render();
         $html = mb_convert_encoding($view, 'HTML-ENTITIES', 'UTF-8');
 
         $pdf = app('dompdf.wrapper');
@@ -395,7 +412,7 @@ class Transactions extends Controller
         $translations = collect($this->getTranslationsForConnect($transaction->type));
 
         $data = [
-            'transaction' => $transaction->load(['account', 'category'])->toJson(),
+            'transaction' => $transaction->load(['account', 'category', 'taxes'])->toJson(),
             'currency' => $transaction->currency->toJson(),
             'documents' => $documents,
             'translations' => $translations->toJson(),

@@ -28,7 +28,7 @@ trait Documents
 
     public function isNotRecurringDocument(): bool
     {
-        return ! $this->isRecurring();
+        return ! $this->isRecurringDocument();
     }
 
     public function getRecurringDocumentTypes() : array
@@ -206,7 +206,8 @@ trait Documents
 
         $today = Date::today()->toDateString();
 
-        $documents = $documents ?: Document::type($type)->with('transactions')->future();
+        // Eager load transactions with currency to prevent N+1 queries when calling getAmountConvertedToDefault()
+        $documents = $documents ?: Document::type($type)->with(['transactions', 'transactions.currency'])->future();
 
         $documents->each(function ($document) use (&$totals, $today) {
             if (! in_array($document->status, $this->getDocumentStatusesForFuture())) {

@@ -44,6 +44,20 @@ class Invoices extends Controller
      */
     public function show(Document $invoice, Request $request)
     {
+        $invoice->load([
+            'items.taxes.tax',
+            'items.item',
+            'totals',
+            'contact',
+            'currency',
+            'category',
+            'histories',
+            'media',
+            'transactions',
+            'recurring',
+            'children',
+        ]);
+
         $payment_methods = Modules::getPaymentMethods();
 
         event(new \App\Events\Document\DocumentViewed($invoice));

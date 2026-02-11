@@ -18,6 +18,8 @@ class UpdateBankingDocumentTransaction extends Job implements ShouldUpdate
 {
     use Currencies;
 
+    protected Transaction $transaction;
+
     public function __construct(Document $model, Transaction $transaction, $request)
     {
         $this->model = $model;
@@ -36,13 +38,6 @@ class UpdateBankingDocumentTransaction extends Job implements ShouldUpdate
 
         \DB::transaction(function () {
             $this->transaction = $this->dispatch(new UpdateTransaction($this->transaction, $this->request));
-
-            // Upload attachment
-            if ($this->request->file('attachment')) {
-                $media = $this->getMedia($this->request->file('attachment'), 'transactions');
-
-                $this->transaction->attachMedia($media, 'attachment');
-            }
 
             $this->model->save();
 

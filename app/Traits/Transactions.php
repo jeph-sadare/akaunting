@@ -42,7 +42,7 @@ trait Transactions
 
     public function isNotRecurringTransaction(): bool
     {
-        return ! $this->isRecurring();
+        return ! $this->isRecurringTransaction();
     }
 
     public function isTransferTransaction(): bool
@@ -153,7 +153,9 @@ trait Transactions
     {
         event(new TransactionPrinting($transaction));
 
-        $view = view('banking.transactions.print_default', ['transaction' => $transaction])->render();
+        $real_type = $this->getRealTypeTransaction($transaction->type);
+
+        $view = view('banking.transactions.print_default', compact('transaction', 'real_type'))->render();
         $html = mb_convert_encoding($view, 'HTML-ENTITIES', 'UTF-8');
 
         $pdf = app('dompdf.wrapper');
@@ -192,6 +194,7 @@ trait Transactions
             'add_an' => trans('general.form.add_an', ['field' => trans_choice('general.' . Str::plural($document_type), 1)]),
             'transaction' => trans_choice('general.' . Str::plural($type), 1),
             'difference' => trans('general.difference'),
+            'connect_tax' => trans('messages.warning.connect_tax', ['type' => $type]),
         ];
     }
 

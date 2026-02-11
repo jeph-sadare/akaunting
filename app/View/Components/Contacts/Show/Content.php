@@ -36,7 +36,10 @@ class Content extends Component
         // Handle documents
         $docs = $this->contact->isCustomer() ? 'invoices' : 'bills';
 
-        $this->documents = $this->contact->$docs()->with('transactions')->get();
+        // Eager load documents with necessary relations to prevent lazy loading
+        $this->documents = $this->contact->$docs()
+            ->with(['transactions', 'transactions.currency', 'contact', 'last_history', 'items', 'totals'])
+            ->get();
 
         $this->counts['documents'] = $this->documents->count();
 
@@ -62,8 +65,10 @@ class Content extends Component
             }
         }
 
-        // Handle payments
-        $this->transactions = $this->contact->transactions()->with('account', 'category')->get();
+        // Handle payments - eager load necessary relations to prevent lazy loading
+        $this->transactions = $this->contact->transactions()
+            ->with(['account', 'category', 'currency', 'contact', 'document', 'recurring'])
+            ->get();
 
         $this->counts['transactions'] = $this->transactions->count();
 

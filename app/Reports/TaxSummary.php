@@ -4,11 +4,13 @@ namespace App\Reports;
 
 use App\Abstracts\Report;
 use App\Models\Banking\Transaction;
+use App\Models\Banking\TransactionTax;
 use App\Models\Document\Document;
 use App\Models\Setting\Tax;
 use App\Traits\Currencies;
 use App\Utilities\Recurring;
 use App\Utilities\Date;
+use Illuminate\Support\Str;
 
 class TaxSummary extends Report
 {
@@ -17,6 +19,8 @@ class TaxSummary extends Report
     public $default_name = 'reports.tax_summary';
 
     public $category = 'general.accounting';
+
+    public $group = 'tax';
 
     public $icon = 'percent';
 
@@ -68,6 +72,14 @@ class TaxSummary extends Report
 
                 break;
         }
+
+        // Incomes 
+        $incomes = $this->applyFilters(Transaction::with('taxes')->income()->isNotDocument()->isNotTransfer(), ['date_field' => 'paid_at'])->get();
+        $this->setTotals($incomes, 'paid_at');
+
+        // Expenses
+        $expenses = $this->applyFilters(Transaction::with('taxes')->expense()->isNotDocument()->isNotTransfer(), ['date_field' => 'paid_at'])->get();
+        $this->setTotals($expenses, 'paid_at');
     }
 
     public function setTotals($items, $date_field, $check_type = false, $table = 'default', $with_tax = true)
@@ -77,6 +89,11 @@ class TaxSummary extends Report
             $item = $this->applyGroups($item);
 
             $type = ($item->type === Document::INVOICE_TYPE || $item->type === 'income') ? 'income' : 'expense';
+
+            if ($item instanceof Transaction && empty($item->document_id)) {
+                $this->setTransactionTaxTotal($item, $type, $date_field);
+                continue;
+            }
 
             $date = $this->getFormattedDate(Date::parse($item->$date_field));
 
@@ -93,16 +110,28 @@ class TaxSummary extends Report
                     continue;
                 }
 
+                $item_total_name = $item_total->name;
+
                 if (
-                    !isset($this->row_values[$item_total->name][$type][$date])
-                    || !isset($this->footer_totals[$item_total->name][$date])
+                    !isset($this->row_values[$item_total_name][$type][$date])
+                    || !isset($this->footer_totals[$item_total_name][$date])
                 ) {
-                    continue;
+                    $item_total_name = Str::lcfirst($item_total_name); // #Clickup@86c3nzq4r
+
+                    if (!isset($this->row_values[$item_total_name][$type][$date])
+                        || !isset($this->footer_totals[$item_total_name][$date])
+                    ) {
+                        continue;
+                    }
                 }
 
                 if ($date_field == 'paid_at') {
-                    $rate = ($item->amount * 100) / $type_item->amount;
-                    $item_amount = ($item_total->amount / 100) * $rate;
+                    if ($type_item->amount != 0) {
+                        $rate = ($item->amount * 100) / $type_item->amount;
+                        $item_amount = ($item_total->amount / 100) * $rate;
+                    } else {
+                        $item_amount = $item_total->amount;
+                    }
                 } else {
                     $item_amount = $item_total->amount;
                 }
@@ -110,14 +139,44 @@ class TaxSummary extends Report
                 $amount = $this->convertToDefault($item_amount, $item->currency_code, $item->currency_rate);
 
                 if ($type == 'income') {
-                    $this->row_values[$item_total->name][$type][$date] += $amount;
+                    $this->row_values[$item_total_name][$type][$date] += $amount;
 
-                    $this->footer_totals[$item_total->name][$date] += $amount;
+                    $this->footer_totals[$item_total_name][$date] += $amount;
                 } else {
-                    $this->row_values[$item_total->name][$type][$date] -= $amount;
+                    $this->row_values[$item_total_name][$type][$date] -= $amount;
 
-                    $this->footer_totals[$item_total->name][$date] -= $amount;
+                    $this->footer_totals[$item_total_name][$date] -= $amount;
                 }
+            }
+        }
+    }
+
+    public function setTransactionTaxTotal($item, $type, $date_field)
+    {
+        if (empty($item->taxes)) {
+            return;
+        }
+
+        $date = $this->getFormattedDate(Date::parse($item->$date_field));
+
+        foreach ($item->taxes as $tax) {
+            if (
+                !isset($this->row_values[$tax->name][$type][$date])
+                || !isset($this->footer_totals[$tax->name][$date])
+            ) {
+                continue;
+            }
+    
+            $amount = $this->convertToDefault($tax->amount, $item->currency_code, $item->currency_rate);
+    
+            if ($type == 'income') {
+                $this->row_values[$tax->name][$type][$date] += $amount;
+    
+                $this->footer_totals[$tax->name][$date] += $amount;
+            } else {
+                $this->row_values[$tax->name][$type][$date] -= $amount;
+    
+                $this->footer_totals[$tax->name][$date] -= $amount;
             }
         }
     }

@@ -2,7 +2,11 @@
 
 namespace App\Utilities;
 
+use App\Models\Module\Module;
 use App\Traits\SiteApi;
+use App\Traits\Jobs;
+use App\Jobs\Install\DisableModule;
+use App\Jobs\Install\UninstallModule;
 use App\Utilities\Date;
 use GrahamCampbell\Markdown\Facades\Markdown;
 use Illuminate\Support\Arr;
@@ -10,7 +14,7 @@ use Illuminate\Support\Facades\Cache;
 
 class Versions
 {
-    use SiteApi;
+    use SiteApi, Jobs;
 
     public static function changelog()
     {
@@ -84,7 +88,14 @@ class Versions
             $versions = [];
 
             // Check core first
-            $url = 'core/version/' . $info['akaunting'] . '/' . $info['php'] . '/' . $info['mysql'] . '/' . $info['companies'];
+            try {
+                $url = 'core/version/' . $info['akaunting'] . '/' . $info['php'] . '/' . $info['mysql'] . '/' . $info['companies'];
+            } catch (\Exception $e) {
+                // Handle exception
+                report('Error fetching core version: ( $info = ' . json_encode($info) . ')' . $e->getMessage());
+
+                return $versions;
+            }
 
             # Installed modules start
             $modules = Arr::wrap($modules);
@@ -167,6 +178,7 @@ class Versions
         $version->latest = $latest;
         $version->errors = false;
         $version->message = '';
+        $version->subscription = null;
 
         if (! $body = static::getResponseBody('GET', $url, ['timeout' => 10])) {
             return $version;
@@ -180,8 +192,58 @@ class Versions
         $version->latest = $body->data->latest;
         $version->errors = $body->errors;
         $version->message = $body->message;
+        $version->subscription = $body->data?->subscription ?? null;
 
         return $version;
+    }
+
+    public static function enforceSubscriptionStatus($alias, $version): void
+    {
+        if (! $version->subscription) {
+            return;
+        }
+
+        if ($version->subscription->expired_at > Date::now()->startOfDay()) {
+            return;
+        }
+
+        $status = 'active';
+
+        switch ($version->subscription->status) {
+            case 'expired':
+            case 'canceled':
+                $status = 'disabled';
+                break;
+            case 'chargeback':
+            case 'not_paid':
+            case 'none':
+            case 'refund':
+                $status = 'uninstalled';
+                break;
+            default:
+                // Do nothing
+                break;
+        }
+
+        if ($status == 'active') {
+            return;
+        }
+
+        $module_companies = Module::allCompanies()->alias($alias)->get();
+
+        foreach ($module_companies as $module) {
+            switch ($status) {
+                case 'disabled':
+                    dispatch(new DisableModule($alias, $module->company_id));
+                    break;
+                case 'uninstalled':
+                    dispatch(new UninstallModule($alias, $module->company_id));
+                    break;
+                default:
+                    // Do nothing
+                    break;
+            }
+        }
     }
 
     public static function getUpdates()

@@ -245,11 +245,12 @@ class Items extends Controller
             $currency_code = default_currency();
         }
 
-        $autocomplete = Item::autocomplete([
+        $autocomplete = Item::with('taxes')->autocomplete([
             'name' => $query
         ]);
 
-        $items = $autocomplete->get();
+        // Eager load taxes and tax relationships to prevent N+1 queries
+        $items = $autocomplete->with(['taxes.tax'])->get();
 
         if ($items) {
             foreach ($items as $item) {
@@ -260,6 +261,7 @@ class Items extends Controller
                     $inclusives = $compounds = [];
 
                     foreach($item->taxes as $item_tax) {
+                        // Tax relationship is now eager loaded, preventing N+1 query
                         $tax = $item_tax->tax;
 
                         switch ($tax->type) {

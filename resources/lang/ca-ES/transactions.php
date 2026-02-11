@@ -12,6 +12,7 @@ return [
     'recurring_expense'     => 'Despesa recurrent',
     'included_tax'          => 'Impostos inclosos',
     'connected'             => 'Connectat',
+    'connect_message'       => 'Els impostos per aquest :type no s\'han calculat durant el procés d\'enllaç. Els impostos no es poden enllaçar.',
 
     'form_description' => [
         'general'           => 'Aquí pots introduir la informació general de la transacció com ara data, quantitat, compte, descripció, etc.',
@@ -46,5 +47,12 @@ return [
     'sticky' => [
         'description'       => 'Previsualització de la versió web de la teva factura que veurà el teu client.',
     ],
+
+    'messages' => [
+        'update_document_transaction' => 'Pots actualitzar aquesta transacció. Ves al document i fes-ho des d\'allà.',
+        'create_document_transaction_error' => 'No es pot afegir aquest enllaç al document. Fes servir {{akaunting_url}}/documents/{{akaunting_document_id}}/transactions',
+        'update_document_transaction_error' => 'No es pot actualitzar aquest enllaç del document. Fes servir {{akaunting_url}}/documents/{{akaunting_document_id}}/transactions/{akaunting_transaction_id}',
+        'delete_document_transaction_error' => 'No es pot esborrar aquest enllaç del document. Fes servir {{akaunting_url}}/documents/{{akaunting_document_id}}/transactions/{akaunting_transaction_id}',
+    ]
 
 ];

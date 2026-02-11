@@ -14,6 +14,7 @@ class AddDate extends Listener
         'App\Reports\IncomeExpenseSummary',
         'App\Reports\ProfitLoss',
         'App\Reports\TaxSummary',
+        'App\Reports\DiscountSummary',
     ];
 
     /**
